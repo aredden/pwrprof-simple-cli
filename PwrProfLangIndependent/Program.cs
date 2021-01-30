@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using MainColorConsole;
 
 public class Program {
 
@@ -415,22 +416,22 @@ public class Program {
         ACCESS_INDIVIDUAL_SETTING = 18
     }
 
-    private static string ReadFriendlyName(Guid schemeGuid) {
-        uint sizeName = 1024;
-        IntPtr pSizeName = Marshal.AllocHGlobal((int)sizeName);
+    /*    private static string ReadFriendlyName(Guid schemeGuid) {
+            uint sizeName = 1024;
+            IntPtr pSizeName = Marshal.AllocHGlobal((int)sizeName);
 
-        string friendlyName;
+            string friendlyName;
 
-        try {
-            PowerReadFriendlyName(IntPtr.Zero, ref schemeGuid, IntPtr.Zero, IntPtr.Zero, pSizeName, ref sizeName);
-            friendlyName = Marshal.PtrToStringUni(pSizeName);
-        }
-        finally {
-            Marshal.FreeHGlobal(pSizeName);
-        }
+            try {
+                PowerReadFriendlyName(IntPtr.Zero, ref schemeGuid, IntPtr.Zero, IntPtr.Zero, pSizeName, ref sizeName);
+                friendlyName = Marshal.PtrToStringUni(pSizeName);
+            }
+            finally {
+                Marshal.FreeHGlobal(pSizeName);
+            }
 
-        return friendlyName;
-    }
+            return friendlyName;
+        }*/
 
     public static IEnumerable<Guid> GetAll() {
         var schemeGuid = Guid.Empty;
@@ -444,7 +445,7 @@ public class Program {
         }
     }
 
-    public static void SetValue(String[] args,Sub sub, Setting setting) {
+    public static void SetValue(String[] args, Sub sub, Setting setting) {
         if (args[0] == "active") {
             Guid active = GetActivePlan();
             uint val = uint.Parse(args[1]);
@@ -482,34 +483,89 @@ public class Program {
         }
     }
 
+    public static void GetDesc(String[] args, Sub sub, Setting setting) {
+        var active = GetActivePlan();
+        var subguid = Lookup.SubGuids[sub];
+        var settingguid = Lookup.SettingGuids[setting];
+        uint bufferSize = 1024;
+        IntPtr buffer = Marshal.AllocHGlobal((int)bufferSize);
+        IntPtr subs = Marshal.AllocHGlobal(active.ToString().Length);
+        uint ret = PowerReadDescription(IntPtr.Zero, 
+            ref active, 
+            IntPtr.Parse(subguid.ToString()), 
+            IntPtr.Parse(settingguid.ToString()), 
+            buffer, 
+            ref bufferSize);
+        
+        Console.WriteLine(buffer.ToString());
+        Marshal.FreeHGlobal(buffer);
+    }
+
     public static void ProcessArgs(String[] args) {
         if (args.Length > 0) {
             var newArgs = args.Skip(1).ToArray();
             switch (args[0]) {
+                case "help": {
+                        ColorConsole.WriteSuccess("------------------------------------------------------------------");
+                        ColorConsole.WriteEmbeddedColorLine("         [green]PwrProfLangIndependent - Created By: Alex Redden[/green]         ");
+                        ColorConsole.WriteSuccess("------------------------------------------------------------------");
+                        ColorConsole.WriteLine("");
+                        ColorConsole.WriteEmbeddedColorLine("[cyan]BOOST:[/cyan]");
+                        ColorConsole.WriteLine("");
+                        ColorConsole.WriteEmbeddedColorLine("[green]boostset:[/green] \"boostset [guid of plan to apply boost] [integer value of boost]\"");
+                        ColorConsole.WriteEmbeddedColorLine("[green]Returns:[/green] [True if success, False if failure]");
+                        ColorConsole.WriteLine("");
+                        ColorConsole.WriteEmbeddedColorLine("[green]boostget:[/green] \"boostget [guid of plan to get boost value]\"");
+                        ColorConsole.WriteEmbeddedColorLine("[green]Returns:[/green] [AC boost] [DC boost]");
+                        ColorConsole.WriteLine("");
+                        ColorConsole.WriteEmbeddedColorLine("[cyan]GRAPHICS PREFERENCE:[/cyan]");
+                        ColorConsole.WriteLine("");
+                        ColorConsole.WriteEmbeddedColorLine("[green]graphicsset:[/green] \"graphicsset [guid of plan to apply graphics] [integer value of graphics] \"");
+                        ColorConsole.WriteEmbeddedColorLine("[green]Returns:[/green] [True if success, False if failure]");
+                        ColorConsole.WriteLine("");
+                        ColorConsole.WriteEmbeddedColorLine("[green]graphicsget:[/green] \"graphicsget [guid of plan to get graphics value]\"");
+                        ColorConsole.WriteEmbeddedColorLine("[green]Returns:[/green] [AC graphics] [DC graphics]");
+                        ColorConsole.WriteLine("");
+                        ColorConsole.WriteEmbeddedColorLine("[cyan]AMD POWER SLIDER:[/cyan]");
+                        ColorConsole.WriteLine("");
+                        ColorConsole.WriteEmbeddedColorLine("[green]amdpowerset:[/green] \"amdpowerset [guid of plan to apply amdpowerslider] [integer value of amdpowerslider]\"");
+                        ColorConsole.WriteEmbeddedColorLine("[green]Returns:[/green] [True if success, False if failure]");
+                        ColorConsole.WriteLine("");
+                        ColorConsole.WriteEmbeddedColorLine("[green]amdpowerget:[/green] \"amdpowerget [guid of plan to get amdpowerslider value]\"");
+                        ColorConsole.WriteEmbeddedColorLine("[green]Returns:[/green] [AC powerslider value] [DC powerslider value]");
+                        ColorConsole.WriteLine("");
+                        ColorConsole.WriteLine("");
+                        ColorConsole.WriteSuccess("------------------------------------------------------------------");
+                        break;
+                    };
                 case "boostset": {
                         SetValue(newArgs, Sub.PROCESSOR_SETTINGS_SUBGROUP, Setting.PERFBOOSTMODE);
                         break;
                     };
                 case "boostget": {
-                        GetValue(newArgs,Sub.PROCESSOR_SETTINGS_SUBGROUP, Setting.PERFBOOSTMODE);
+                        GetValue(newArgs, Sub.PROCESSOR_SETTINGS_SUBGROUP, Setting.PERFBOOSTMODE);
                         break;
                     };
                 case "graphicsset": {
-                        SetValue(newArgs,Sub.SW_DYN_GRAPHICS,Setting.GPU_GLOBAL);
+                        SetValue(newArgs, Sub.SW_DYN_GRAPHICS, Setting.GPU_GLOBAL);
                         break;
                     };
                 case "graphicsget": {
-                        GetValue(newArgs,Sub.SW_DYN_GRAPHICS, Setting.GPU_GLOBAL);
+                        GetValue(newArgs, Sub.SW_DYN_GRAPHICS, Setting.GPU_GLOBAL);
                         break;
                     };
                 case "amdpowerget": {
                         GetValue(newArgs, Sub.POWER_SLIDER, Setting.SLIDER_OVERLAY);
                         break;
-                   };
+                    };
                 case "amdpowerset": {
                         SetValue(newArgs, Sub.POWER_SLIDER, Setting.SLIDER_OVERLAY);
                         break;
                     }
+/*                case "amdpowerdesc": {
+                        GetDesc(newArgs, Sub.POWER_SLIDER, Setting.SLIDER_OVERLAY);
+                        break;
+                    }*/
             }
         }
     }

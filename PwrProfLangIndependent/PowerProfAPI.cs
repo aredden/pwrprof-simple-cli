@@ -60,11 +60,6 @@ namespace PowerProfLangIndependent {
         SLIDER_OVERLAY
     }
 
-    public struct SubgroupOptions {
-
-    }
-
-
 
     public static class Lookup {
         public static Dictionary<Sub, Guid> SubGuids = new Dictionary<Sub, Guid>
